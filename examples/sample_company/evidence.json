@@ -1,0 +1,61 @@
+{
+  "note": "FICTIONAL sample data for testing only. Northwind Health Clearinghouse, its people, funding and partners do not exist (.example is a reserved domain).",
+  "company": "Northwind Health Clearinghouse (Sample)",
+  "website": "https://www.northwind-health.example",
+  "documents": [
+    {
+      "title": "Northwind Health Clearinghouse - Healthcare connectivity APIs",
+      "url": "https://www.northwind-health.example/",
+      "source_type": "official_website",
+      "content": "# Northwind Health Clearinghouse\nNorthwind Health Clearinghouse provides healthcare connectivity APIs that help providers, payers and health technology companies exchange eligibility, claims and remittance data.\n## Built for healthcare developers\nOur platform replaces fragile batch file transfers with modern, developer-friendly REST APIs and real-time responses.\n- Real-time insurance eligibility verification\n- Electronic claims submission and status tracking\n- Electronic remittance advice (ERA) delivery\nTrusted by revenue cycle teams, digital health startups and regional health plans across the United States."
+    },
+    {
+      "title": "Products - Northwind Health Clearinghouse",
+      "url": "https://www.northwind-health.example/products",
+      "source_type": "official_website",
+      "content": "# Products\n## Northwind Eligibility API\nThe Northwind Eligibility API returns real-time insurance eligibility and benefits information for patients. It is designed for provider organizations, billing companies and digital health applications that need answers before a visit.\n- Sub-second responses for most major payers\n- Sandbox environment for developers\n## Northwind Claims Gateway\nThe Northwind Claims Gateway lets revenue cycle teams submit professional and institutional claims electronically, track claim status and receive remittance advice.\n- Supports X12 837 claims and 835 remittance\n- Integrations with practice management systems and EHR platforms\nPricing is available on request. Contact our team for a quote."
+    },
+    {
+      "title": "About Northwind Health Clearinghouse",
+      "url": "https://www.northwind-health.example/about",
+      "source_type": "official_website",
+      "content": "# About us\nNorthwind Health Clearinghouse was founded in 2017 and is headquartered in Columbus, Ohio. We started with a simple idea: healthcare transactions should be as easy to integrate as payments.\n## Our customers\nWe serve medical billing companies, physician practices, digital health companies and regional payers. Our mission is to remove administrative friction from healthcare revenue cycle workflows."
+    },
+    {
+      "title": "Leadership - Northwind Health Clearinghouse",
+      "url": "https://www.northwind-health.example/leadership",
+      "source_type": "official_website",
+      "content": "# Leadership team\nJane Example, CEO and Co-founder. Jane previously led product teams at a large healthcare IT company.\nRaj Sample, Chief Technology Officer. Raj oversees platform engineering and security.\nMaria Placeholder, VP of Partnerships. Maria leads integrations and channel partnerships with practice management vendors."
+    },
+    {
+      "title": "Developer documentation - Northwind",
+      "url": "https://www.northwind-health.example/docs/overview",
+      "source_type": "documentation",
+      "content": "# Developer documentation\nThe Northwind API is a REST API that accepts and returns JSON. Authentication uses OAuth 2.0 client credentials.\nThe platform is hosted on AWS and supports FHIR R4 resources for clinical data exchange alongside X12 EDI transactions including 837 and 835.\nWebhooks notify your application when claim status changes. A sandbox environment is available for testing."
+    },
+    {
+      "title": "Northwind launches Eligibility API v2",
+      "url": "https://www.northwind-health.example/blog/eligibility-api-v2",
+      "source_type": "company_blog",
+      "content": "# Northwind launches Eligibility API v2\nToday we launched Northwind Eligibility API v2 with faster responses and expanded payer coverage. We also announced a partnership with Fabrikam Health Network to bring real-time eligibility checks to its member providers.\nWe are also opening a second office in Austin, Texas to support customer growth."
+    },
+    {
+      "title": "Northwind Health Clearinghouse raises $20 million Series B",
+      "url": "https://www.northwind-health.example/press/series-b",
+      "source_type": "press_release",
+      "content": "# Northwind Health Clearinghouse raises $20 million Series B\nCOLUMBUS, Ohio - Northwind Health Clearinghouse today announced it has raised $20 million in a Series B financing round led by Fabrikam Ventures, with participation from Adventure Works Capital.\nThe company has raised $32 million in total to date. Proceeds will fund product development and expansion of the sales and partnerships team in 2025."
+    },
+    {
+      "title": "Senior Backend Engineer - Northwind careers",
+      "url": "https://www.northwind-health.example/careers/senior-backend-engineer",
+      "source_type": "job_posting",
+      "content": "# Senior Backend Engineer\nNorthwind is hiring a Senior Backend Engineer to build high-throughput healthcare APIs. You will work with Kubernetes, PostgreSQL and Terraform on AWS.\nWe are also hiring account executives and a Head of Growth to support our expansion into new payer segments."
+    },
+    {
+      "title": "Healthcare clearinghouse market: new entrants challenge incumbents",
+      "url": "https://www.healthcare-news.example/clearinghouse-market",
+      "source_type": "news",
+      "content": "Healthcare clearinghouse market: new entrants challenge incumbents\nNorthwind Health Clearinghouse is positioned as a developer-first alternative to Contoso Claims Exchange, the long-standing incumbent in claims connectivity. Analysts note that Northwind competes mainly for mid-market billing companies and digital health startups."
+    }
+  ]
+}

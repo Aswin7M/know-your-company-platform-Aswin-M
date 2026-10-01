@@ -1,0 +1,10 @@
+# Runtime dependencies - all free, all local. No paid API SDKs.
+streamlit>=1.36
+requests>=2.31
+beautifulsoup4>=4.12
+ddgs>=9.0
+sentence-transformers>=3.0
+qdrant-client>=1.10
+pydantic>=2.5
+python-dotenv>=1.0
+numpy>=1.26
