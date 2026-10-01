@@ -137,6 +137,55 @@ Streamlit Workspace + Grounded Chat + Report
 
 ---
 
+## Screenshots
+
+The following screenshots were captured from a real Stedi research run using
+the local Know Your Company application.
+
+### Research Input
+
+![Research Input](docs/screenshots/01-research-input.png)
+
+The application accepts a company name, optional website, and research
+instructions before starting the research pipeline.
+
+### Company Overview
+
+![Company Overview](docs/screenshots/02-company-overview.png)
+
+The company workspace summarizes the collected research and exposes the
+different intelligence modules.
+
+### Technology Evidence
+
+![Technology Evidence](docs/screenshots/03-technology-evidence.png)
+
+Technology signals are separated into verified and inferred information,
+with source references shown alongside the evidence.
+
+### Funding
+
+![Funding](docs/screenshots/04-funding.png)
+
+Funding information is presented with round details, dates, investors, and
+associated source references.
+
+### Source Evidence
+
+![Source Evidence](docs/screenshots/05-source-evidence.png)
+
+The Sources view preserves the original research URLs and metadata, allowing
+the collected evidence to be inspected directly.
+
+### Grounded AI Chat
+
+![Grounded AI Chat](docs/screenshots/06-grounded-ai-chat.png)
+
+The AI Chat interface retrieves collected evidence before generating an
+answer. Source-backed facts and AI inference are explicitly distinguished.
+
+---
+
 ## Key Features
 
 ### 🔎 Public Web Research
@@ -487,29 +536,9 @@ This allows the project to exercise the pipeline without relying on a real compa
 
 ---
 
-## Real-World Validation
+## Real-World Validation — Stedi
 
-The platform was validated using Stedi, a healthcare technology company.
-
-The research run was performed locally using Ollama with the `qwen3:1.7b`
-model. The generated report contained:
-
-- 45 sources
-- 6 products
-- 11 technology signals
-- 9 competitors
-- 3 funding events
-- 8 growth signals
-- 2 named people
-
-The generated report is preserved as an example of the platform's actual
-research output:
-
-[View the Stedi Research Report](docs/examples/stedi-report.md)
-
-The report also demonstrates the platform's evidence-grounding approach:
-factual claims are associated with source IDs, while model-generated
-interpretations are explicitly marked as AI inference.
+The application was also tested against **Stedi** using the actual Windows environment, connected Ollama instance, and public web research.
 
 Validation date:
 
@@ -517,10 +546,29 @@ Validation date:
 2026-10-01
 ```
 
-The run also demonstrated that the application can distinguish directly supported
-technology from inferred signals, expose source-linked intelligence, preserve
-a failed leadership-search state rather than silently hiding it, and generate
-a deterministic report from persisted structured data.
+Model:
+
+```text
+qwen3:1.7b
+```
+
+Observed output:
+
+| Metric | Result |
+|---|---:|
+| Sources | 45 |
+| Products | 6 |
+| Technology signals | 11 |
+| Competitors | 9 |
+| Funding events | 3 |
+| Growth signals | 8 |
+| Named people | 2 |
+
+The run produced a saved Markdown report and exposed the collected sources through the application's Sources tab.
+
+The validation also demonstrated that the UI can distinguish directly supported technology from inferred signals, expose source-linked intelligence, preserve a failed leadership-search state rather than silently hiding it, and generate a deterministic report from the persisted structured data.
+
+A copy of the validation report can be found in the project's documentation materials as `stedi-report.md`.
 
 ---
 
@@ -702,8 +750,15 @@ docs/
 ├── grounding.md
 ├── testing.md
 ├── validation.md
-└── examples/
-    └── stedi-report.md
+├── examples/
+│   └── stedi-report.md
+└── screenshots/
+    ├── 01-research-input.png
+    ├── 02-company-overview.png
+    ├── 03-technology-evidence.png
+    ├── 04-funding.png
+    ├── 05-source-evidence.png
+    └── 06-grounded-ai-chat.png
 ```
 
 The README is intended as the quick technical and portfolio entry point; the deeper documentation explains implementation details and validation history.
