@@ -53,89 +53,51 @@ The application can research and organize:
 
 ---
 
-## Architecture
+## Prerequisites
 
-```text
-                         ┌───────────────────────┐
-                         │     Streamlit UI      │
-                         │        app.py         │
-                         └───────────┬───────────┘
-                                     │
-                    ┌────────────────┴────────────────┐
-                    │                                 │
-                    ▼                                 ▼
-             Research Pipeline                 Grounded AI Chat
-                    │                                 │
-          ┌─────────┴─────────┐                       │
-          ▼                   ▼                       │
-   Official Website      DuckDuckGo                  │
-      Crawler             Search                     │
-          │                   │                       │
-          └─────────┬─────────┘                       │
-                    ▼                                 │
-          Clean / Deduplicate                        │
-          Redact / Normalize                         │
-                    │                                 │
-                    ▼                                 │
-          Chunk → Embed → Store                      │
-                    │                                 │
-                    ▼                                 │
-             Embedded Qdrant ◄───────────────────────┘
-                    │
-                    ▼
-             Retrieve Top-K
-                Evidence
-                    │
-                    ▼
-             Ollama / Qwen3
-                    │
-                    ▼
-          Structured JSON Proposal
-                    │
-                    ▼
-        Deterministic Grounding Checks
-                    │
-                    ▼
-        Validated Company Intelligence
-                    │
-          ┌─────────┴──────────┐
-          ▼                    ▼
-     JSON Storage         Markdown Report
+Know Your Company is a local application. Cloning or downloading the
+repository does not by itself install the external runtime requirements.
+
+Before running the application, the system needs:
+
+- Windows 11 or a compatible Windows environment
+- Python 3.10+
+- Ollama installed locally
+- The `qwen3:1.7b` Ollama model
+- Internet access for the initial Python dependency installation and
+  public web research
+- Sufficient RAM for local CPU-based inference
+
+The project's `setup_windows.bat` script creates the Python virtual
+environment and installs the required Python dependencies automatically.
+
+Ollama and the Qwen3 model are separate prerequisites and are not bundled
+inside the GitHub repository.
+
+### Required setup
+
+```cmd
+setup_windows.bat
+ollama pull qwen3:1.7b
+run.bat
 ```
 
-### Research lifecycle
+For detailed Ollama setup instructions, see
+[`OLLAMA_SETUP.md`](OLLAMA_SETUP.md).
 
-```text
-Company Input
-     ↓
-Company Identification
-     ↓
-Official Website + Web Search
-     ↓
-Source Normalization
-     ↓
-Evidence Cleaning
-     ↓
-Chunking
-     ↓
-Local Embeddings
-     ↓
-Embedded Qdrant Vector Store
-     ↓
-Task-specific Retrieval
-     ↓
-Ollama / Qwen3 Structured Extraction
-     ↓
-Evidence / Source Validation
-     ↓
-Verified / Inferred / Not Verified
-     ↓
-Persisted Company Intelligence
-     ↓
-Streamlit Workspace + Grounded Chat + Report
-```
+> **Note:** The repository does not include the Python virtual environment,
+> Ollama installation, Ollama model files, downloaded embedding models, or
+> runtime company data. These are created or downloaded locally during setup
+> and execution.
 
 ---
+
+## Architecture
+
+The following diagram shows the main application flow, from company input and web research through local RAG retrieval, Ollama/Qwen3 analysis, grounding and validation, and the final company intelligence outputs.
+
+![Know Your Company Architecture](docs/architecture-diagram.png)
+
 
 ## Screenshots
 

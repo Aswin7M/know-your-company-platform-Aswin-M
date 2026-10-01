@@ -1,72 +1,249 @@
-# Ollama setup for Know Your Company
+# Ollama Setup Guide
 
-Know Your Company uses [Ollama](https://ollama.com) to run a language model **locally on your own computer**.
+This guide explains how to install and prepare Ollama for the Know Your Company project.
 
-* **Free.** Ollama and the models are free to download and run.
-* **No API key, no account, no credit card.**
-* **Private.** Your research stays on your machine; nothing is sent to a cloud LLM.
-* **Speed depends on your hardware.** On a CPU-only laptop a small model answers slowly (seconds to minutes per answer).
-* **8 GB RAM means small models.** Larger models (7B and up) may be very slow or fail to load. Start small.
+Know Your Company uses Ollama as the local LLM runtime. The project is configured to use `qwen3:1.7b` by default so that it can run on a Windows machine with limited RAM and without a paid LLM API.
 
-## 1. Download Ollama
+## 1. Install Ollama
 
-Go to <https://ollama.com/download> and download the **Windows** installer.
+Download and install Ollama for Windows from the official Ollama website:
 
-## 2. Install Ollama
+https://ollama.com/download/windows
 
-Run the installer. Ollama starts automatically and runs in the background (look for the llama icon in the system tray). It listens on `http://localhost:11434`.
+Complete the Windows installation using the default options unless you have a specific reason to change them.
 
-## 3. Verify the installation
+After installation, open a new Command Prompt or VS Code terminal.
 
-Open **Command Prompt** or **PowerShell**:
+## 2. Verify Ollama
 
-```bash
+Run:
+
+```cmd
 ollama --version
 ```
 
-You should see a version number.
+A version number should be displayed.
 
-## 4. Pull a small model
+If Windows reports that `ollama` is not recognized, close and reopen the terminal. If it still fails, restart Windows and try again.
 
-The recommended starting model for an 8 GB RAM / CPU-only machine is **qwen3:1.7b**:
+## 3. Download the Qwen3 Model
 
-```bash
+Know Your Company uses:
+
+```text
+qwen3:1.7b
+```
+
+Download it with:
+
+```cmd
 ollama pull qwen3:1.7b
 ```
 
-The download is roughly 1-2 GB. Other small options you can try later (check <https://ollama.com/library> for what is currently available, as the catalogue changes):
+The model is downloaded to Ollama's local model storage. It is not included in the GitHub repository.
 
-| Model | Notes |
-|---|---|
-| `qwen3:1.7b` | Recommended default. Small and instruction-following. |
-| `llama3.2:1b` / `llama3.2:3b` | Alternatives; 3b is slower and uses more RAM. |
-| `gemma3:1b` | Another very small option. |
-| `qwen3:4b` | Better quality but noticeably heavier - may be too slow on 8 GB. |
+## 4. Test the Model
 
-Model names are configurable - nothing is hard-coded. Set `OLLAMA_MODEL` in `.env` or change it on the **Settings** page.
+Run:
 
-## 5. Test the model
-
-```bash
+```cmd
 ollama run qwen3:1.7b
 ```
 
-Type a question, press Enter, and type `/bye` to exit. If you get an answer, the model works.
+Then enter a simple test such as:
 
-## 6. Start Know Your Company
+```text
+Explain what a healthcare technology company does in one sentence.
+```
 
-1. Run `setup_windows.bat` once (installs Python dependencies).
-2. Double-click `run.bat`.
-3. Open **Settings** in the app. You should see **🟢 Ollama Connected**.
+If the model responds, the local LLM is working.
 
-## Troubleshooting
+To exit the model:
 
-| Symptom | Fix |
-|---|---|
-| **🔴 Ollama Not Available** | Start Ollama from the Start menu, or run `ollama serve` in a terminal. Check `OLLAMA_BASE_URL` in `.env`. |
-| **🟡 Model missing** | Run `ollama pull <model>` for the model shown in the app. |
-| Timeouts / very slow answers | Use a smaller model, close other apps, lower `TOP_K`, or raise `OLLAMA_TIMEOUT` in `.env`. |
-| Out-of-memory or the model fails to load | Use a smaller model (`qwen3:1.7b`, `llama3.2:1b`). Lower `OLLAMA_NUM_CTX`. |
-| Answers are vague or wrong | Small models are limited. The app cross-checks extracted facts against the evidence and drops unsupported ones, but chat answers are still only as good as the model. Always check the cited sources. |
+```text
+/bye
+```
 
-If you are only exploring, you can tick off **Run AI analysis** when researching a company: the app will still collect, clean and index public evidence without calling the model.
+## 5. Verify the Ollama Service
+
+Ollama normally exposes its local service at:
+
+```text
+http://localhost:11434
+```
+
+You can test it from Command Prompt with:
+
+```cmd
+curl http://localhost:11434/api/tags
+```
+
+A successful response should contain information about the locally available models.
+
+If `curl` is unavailable in your environment, you can simply verify the service by running:
+
+```cmd
+ollama list
+```
+
+You should see `qwen3:1.7b` in the model list.
+
+## 6. Configure Know Your Company
+
+The project uses the following default Ollama configuration:
+
+```text
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:1.7b
+OLLAMA_TIMEOUT=300
+OLLAMA_NUM_CTX=4096
+```
+
+The application can use these defaults without additional configuration.
+
+If you need to override them, use the project's `.env` file.
+
+For example:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:1.7b
+```
+
+Do not commit `.env` files containing machine-specific or private configuration.
+
+## 7. Start Know Your Company
+
+After Ollama and the model are ready, open the project folder in VS Code and run:
+
+```cmd
+setup_windows.bat
+```
+
+Then start the application:
+
+```cmd
+run.bat
+```
+
+The Streamlit application will open locally in your browser.
+
+Ollama should remain installed and available while the application is using the local model.
+
+## 8. Important: What Is and Is Not Included in GitHub
+
+The GitHub repository contains the application source code and documentation.
+
+It does not contain:
+
+- The Ollama Windows installation
+- The `qwen3:1.7b` model files
+- The Python `.venv` virtual environment
+- Downloaded embedding model files
+- Runtime company research data
+- Local vector-store data
+
+These are created or downloaded locally on each machine.
+
+Therefore, someone cloning the repository on another computer must install the prerequisites before running the application.
+
+## 9. Recommended Setup Order
+
+For a fresh Windows machine, use this order:
+
+```text
+1. Install Python
+2. Install Ollama
+3. Verify Ollama
+4. Download qwen3:1.7b
+5. Clone/download Know Your Company
+6. Open the project in VS Code
+7. Run setup_windows.bat
+8. Run run.bat
+```
+
+Or, in command form:
+
+```cmd
+ollama --version
+ollama pull qwen3:1.7b
+ollama list
+setup_windows.bat
+run.bat
+```
+
+## 10. Troubleshooting
+
+### `ollama` is not recognized
+
+Close and reopen Command Prompt or VS Code after installing Ollama.
+
+If the command is still unavailable, restart Windows and run:
+
+```cmd
+ollama --version
+```
+
+### The model is missing
+
+Run:
+
+```cmd
+ollama list
+```
+
+If `qwen3:1.7b` is not listed, run:
+
+```cmd
+ollama pull qwen3:1.7b
+```
+
+### The application cannot connect to Ollama
+
+Verify that Ollama is installed and that the local service is available.
+
+Run:
+
+```cmd
+ollama list
+```
+
+Then verify:
+
+```cmd
+curl http://localhost:11434/api/tags
+```
+
+Also check that the project's `.env` configuration, if present, uses:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+### Local inference is slow
+
+`qwen3:1.7b` is intentionally used as a small local model for lower-resource machines. CPU-only inference can still take time, especially during larger research runs.
+
+Avoid switching to a substantially larger model on an 8 GB RAM machine unless the system has enough available memory.
+
+## 11. Local-First Design
+
+Know Your Company is designed around a local-first workflow:
+
+- The LLM runs through local Ollama.
+- No OpenAI, Anthropic, Gemini, Groq, Tavily, or SerpAPI API key is required for the default workflow.
+- Company research and application data are stored locally.
+- Web access is used for public company research.
+- The application is intended to run on the user's own Windows machine.
+
+This setup keeps the initial operating cost at zero apart from the user's existing computer and internet connection.
+
+## Reference
+
+Official Ollama website:
+
+https://ollama.com/
+
+Official Ollama Windows download:
+
+https://ollama.com/download/windows
