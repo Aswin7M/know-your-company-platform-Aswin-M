@@ -1,203 +1,731 @@
 # 🏥 Know Your Company
 
-**AI-powered healthcare company intelligence - local, free, and source-grounded.**
+**AI-powered company intelligence and GTM research platform — local, free, and source-grounded.**
 
-Enter a healthcare company, let the app research public sources, and then ask questions about it. Every factual answer is tied to numbered sources (`SRC-001`, `SRC-002`, ...), and the app keeps three things visibly separate: **verified/source-supported information**, **AI inference**, and **what could not be verified**.
+Know Your Company is a locally hosted Streamlit application that researches a company from public web sources, converts the collected evidence into structured company intelligence, and provides grounded AI chat and reporting.
 
-It is inspired by the simplicity of the *Know-your-PDF* project, but turns the flow from `PDF → RAG → chat` into `Company → web research → evidence/RAG → intelligence → chat`.
+The project is designed for **company research, GTM intelligence, competitive research, and business analysis** — not clinical diagnosis or medical decision support.
 
-> **Design principle:** *Search → Evidence → Index → Retrieve → LLM → Intelligence.* Python does the research (search, fetch, clean). The LLM never invents evidence; it only analyses evidence that has been stored and indexed, and Python then **checks its output against that evidence**.
+> **Core principle:** **Search → Evidence → Index → Retrieve → LLM → Validate → Intelligence**
 
-## Features
+The system deliberately separates:
+- **Verified** — supported by collected source evidence
+- **AI Inference** — reasoning derived from the available evidence
+- **Not verified** — information the available evidence did not support
 
-* **₹0 / $0.** No paid API, no API keys, no credit card. Runs fully locally.
-* **Local LLM** via Ollama (default `qwen3:1.7b`, configurable).
-* **Free web research** via DuckDuckGo (`ddgs`) plus the company's official website (polite, `robots.txt`-aware).
-* **Evidence pipeline:** clean → de-duplicate → chunk → embed (sentence-transformers) → store in embedded Qdrant.
-* **Structured intelligence:** company profile, products, technology, competitors, funding, growth signals, people, GTM analysis.
-* **Anti-hallucination checks** (see [How grounding works](#how-grounding-works)).
-* **Quick actions:** Company Summary, Products & Services, Technology, Competitors, Funding, Growth Signals, Decision Makers, GTM Analysis, Why This Company?
-* **Grounded chat** with clickable sources and visible retrieval scores.
-* **Markdown report** with 12 sections, clearly marking AI inference.
-* **Graceful failure:** no Ollama, blocked websites, DuckDuckGo errors, malformed model JSON or embedding problems never crash the app.
-* **No database:** JSON files under `data/` plus an embedded Qdrant folder. No Docker.
+---
+
+## Why I Built This
+
+Typical AI company-research workflows can become difficult to audit because a language model may produce plausible claims without preserving exactly where those claims came from.
+
+Know Your Company was built around a different approach:
+
+1. Collect public evidence first.
+2. Preserve source IDs and source metadata.
+3. Clean, de-duplicate, chunk, and index the evidence locally.
+4. Retrieve relevant evidence for each research task.
+5. Ask a local LLM to produce structured output from that evidence.
+6. Apply deterministic Python grounding checks before saving the result.
+7. Generate reports from the validated stored data rather than asking the LLM to write another free-form report.
+
+This makes the system a **research pipeline with an AI reasoning layer**, rather than simply a chatbot.
+
+---
+
+## What It Does
+
+Enter a company name and optionally provide its website or research instructions.
+
+The application can research and organize:
+
+- Company Overview
+- Products & Services
+- Technology
+- Competitors
+- Funding
+- Growth Signals
+- People / Decision Makers
+- GTM Intelligence
+- Sources / Evidence
+- Grounded AI Chat
+- Markdown Reports
+
+---
 
 ## Architecture
 
 ```text
-                    Streamlit UI (app.py)
-                 ┌──────────┴───────────┐
-          Research Company          Company Chat / Quick actions
-                 │                        │
-      ┌──────────┴──────────┐             │
-  Official website      DuckDuckGo        │
-  (research/website_    (research/        │
-   parser.py)            web_search.py)   │
-      └──────────┬──────────┘             │
-          clean + de-duplicate            │
-          + redact emails/phones          │
-                 │                        │
-        chunk → embed → Qdrant (local) ◄──┘   rag/chunker · embeddings · vector_store · retriever
-                 │                        │
-           retrieve top-k evidence ───────┤
-                 │                        ▼
-        Ollama (ai/ollama.py)  ← anti-hallucination prompt (ai/prompts.py)
-                 │
-   structured JSON → GROUNDING CHECKS (research/common.py + modules)
-                 │
-   data/companies/<slug>/{company,evidence,sources}.json + report.md
+                         ┌───────────────────────┐
+                         │     Streamlit UI      │
+                         │        app.py         │
+                         └───────────┬───────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    │                                 │
+                    ▼                                 ▼
+             Research Pipeline                 Grounded AI Chat
+                    │                                 │
+          ┌─────────┴─────────┐                       │
+          ▼                   ▼                       │
+   Official Website      DuckDuckGo                  │
+      Crawler             Search                     │
+          │                   │                       │
+          └─────────┬─────────┘                       │
+                    ▼                                 │
+          Clean / Deduplicate                        │
+          Redact / Normalize                         │
+                    │                                 │
+                    ▼                                 │
+          Chunk → Embed → Store                      │
+                    │                                 │
+                    ▼                                 │
+             Embedded Qdrant ◄───────────────────────┘
+                    │
+                    ▼
+             Retrieve Top-K
+                Evidence
+                    │
+                    ▼
+             Ollama / Qwen3
+                    │
+                    ▼
+          Structured JSON Proposal
+                    │
+                    ▼
+        Deterministic Grounding Checks
+                    │
+                    ▼
+        Validated Company Intelligence
+                    │
+          ┌─────────┴──────────┐
+          ▼                    ▼
+     JSON Storage         Markdown Report
 ```
+
+### Research lifecycle
+
+```text
+Company Input
+     ↓
+Company Identification
+     ↓
+Official Website + Web Search
+     ↓
+Source Normalization
+     ↓
+Evidence Cleaning
+     ↓
+Chunking
+     ↓
+Local Embeddings
+     ↓
+Embedded Qdrant Vector Store
+     ↓
+Task-specific Retrieval
+     ↓
+Ollama / Qwen3 Structured Extraction
+     ↓
+Evidence / Source Validation
+     ↓
+Verified / Inferred / Not Verified
+     ↓
+Persisted Company Intelligence
+     ↓
+Streamlit Workspace + Grounded Chat + Report
+```
+
+---
+
+## Key Features
+
+### 🔎 Public Web Research
+
+- Official website crawling
+- DuckDuckGo-based web search through `ddgs`
+- Bounded research depth and query limits
+- `robots.txt` awareness
+- Source normalization and classification
+- Duplicate paragraph removal
+- Email and phone redaction
+
+### 🧠 Local LLM
+
+The default model is:
+
+```text
+qwen3:1.7b
+```
+
+Inference runs through **Ollama locally**, avoiding paid LLM APIs and API-key dependency.
+
+The model is configurable through `.env` / application settings.
+
+### 📚 Local RAG
+
+Evidence is:
+
+```text
+cleaned
+   ↓
+chunked
+   ↓
+embedded
+   ↓
+stored in embedded Qdrant
+   ↓
+retrieved by company and relevance
+```
+
+The RAG layer uses:
+
+- Sentence Transformers
+- `BAAI/bge-small-en-v1.5`
+- Embedded Qdrant
+- Company-filtered retrieval
+- Paragraph-aware chunking
+
+A deterministic fallback embedding backend is also available when the primary embedding model cannot be loaded.
+
+### 🛡️ Evidence Grounding
+
+The LLM output is treated as a **proposal**, not as automatically trusted truth.
+
+Examples of validation rules include:
+
+| Intelligence | Grounding rule |
+|---|---|
+| Products | Product name must occur in cited evidence |
+| Competitors | Competitor relationship must be supported by evidence |
+| Technology | Directly observed/stated technologies can be Verified; other signals are Inferred |
+| People | Person name and role must be supported together |
+| Funding | Amounts, dates, round types and investors require supporting evidence |
+| Funding totals | Never calculated by blindly summing rounds |
+| Growth signals | Verified claims require meaningful overlap with evidence |
+| GTM | Verified claims are derived from supporting evidence |
+| Source IDs | Model-generated invalid IDs are rejected |
+| Chat citations | Real retrieved source IDs are appended by the application |
+
+**Important:** "Verified" means supported by the collected source evidence. It does not mean the source itself has been independently fact-checked.
+
+### 💬 Grounded AI Chat
+
+The chat layer retrieves relevant evidence before asking the local model to answer.
+
+Responses expose:
+
+- Answer
+- Evidence
+- AI inference
+- Source list
+- Retrieved evidence
+- Retrieval scores
+
+If relevant evidence cannot be retrieved, the system can report that the information was not verified instead of forcing an answer.
+
+### 📄 Deterministic Reports
+
+The Markdown report is generated from the **saved structured intelligence**.
+
+The report layer does not ask the LLM to invent a second free-form research report.
+
+This helps prevent the reporting stage from introducing claims that were not present in the validated data.
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| UI | Streamlit |
+| Language | Python |
+| Local LLM | Ollama |
+| Model | Qwen3 1.7B |
+| Web Search | DuckDuckGo / `ddgs` |
+| Website Parsing | Requests + BeautifulSoup |
+| RAG | Custom retrieval pipeline |
+| Embeddings | Sentence Transformers |
+| Embedding Model | BAAI/bge-small-en-v1.5 |
+| Vector Store | Embedded Qdrant |
+| Data Models | Pydantic |
+| Persistence | JSON + Markdown |
+| Testing | Pytest + Streamlit testing |
+| Runtime | Windows / local single-user workflow |
+
+---
+
+## Repository Structure
+
+```text
+know-your-company/
+│
+├── app.py
+├── config.py
+├── README.md
+├── OLLAMA_SETUP.md
+├── requirements.txt
+├── requirements-dev.txt
+├── pytest.ini
+├── .env.example
+├── .gitignore
+├── setup_windows.bat
+├── run.bat
+│
+├── ai/
+│   ├── analyzer.py
+│   ├── ollama.py
+│   └── prompts.py
+│
+├── research/
+│   ├── company.py
+│   ├── products.py
+│   ├── technology.py
+│   ├── competitors.py
+│   ├── funding.py
+│   ├── signals.py
+│   ├── people.py
+│   ├── gtm.py
+│   ├── pipeline.py
+│   ├── web_search.py
+│   └── website_parser.py
+│
+├── rag/
+│   ├── chunker.py
+│   ├── embeddings.py
+│   ├── retriever.py
+│   ├── sources.py
+│   └── vector_store.py
+│
+├── models/
+│   ├── company.py
+│   ├── product.py
+│   ├── technology.py
+│   ├── competitor.py
+│   ├── funding.py
+│   ├── signal.py
+│   ├── person.py
+│   ├── gtm.py
+│   └── source.py
+│
+├── storage/
+│   ├── json_store.py
+│   └── report.py
+│
+├── examples/
+│   └── sample_company/
+│
+└── tests/
+```
+
+Runtime company data and local vector-store contents remain outside the public repository through `.gitignore`.
+
+---
 
 ## Requirements
 
-* Windows 11 (the scripts target Windows; the Python code is cross-platform)
-* 8 GB RAM, CPU only is fine - **use a small model**
-* **Python 3.10 - 3.12** recommended
-* [Ollama](https://ollama.com/download) (free)
-* Internet access for research, and for the one-time download of the embedding model (~130 MB) and PyTorch
+The project is designed for a local Windows workflow.
+
+### Validated environment
+
+The current implementation was validated locally with:
+
+- Windows 11
+- Python 3.13.2
+- Ollama 0.35.0
+- Qwen3 1.7B
+- CPU inference
+- Approximately 8 GB RAM
+- Streamlit on `localhost:8501`
+
+A small local model is recommended for machines with limited RAM.
+
+---
 
 ## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Aswin7M/know-your-company-platform-Aswin-M.git
+cd know-your-company-platform-Aswin-M
+```
+
+### 2. Run Windows setup
 
 ```bat
 setup_windows.bat
 ```
 
-This checks Python, creates `.venv`, installs `requirements.txt`, creates the `data/` folders and copies `.env.example` to `.env`. It does **not** download any large AI model.
+The setup script:
 
-Manual install (any OS):
+- Checks Python
+- Creates `.venv`
+- Installs runtime dependencies
+- Creates local data directories
+- Creates `.env` from `.env.example`
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows   (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt
-copy .env.example .env          # Linux/macOS: cp .env.example .env
+It does **not** download the Ollama model automatically.
+
+### 3. Activate the environment manually if needed
+
+Command Prompt:
+
+```cmd
+.venv\Scripts\activate
 ```
 
-## Ollama setup
+### 4. Install development dependencies
 
-See **[OLLAMA_SETUP.md](OLLAMA_SETUP.md)**. In short:
+```cmd
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+```
 
-```bash
+---
+
+## Ollama Setup
+
+Install Ollama locally, then verify:
+
+```cmd
 ollama --version
+```
+
+Pull the default model:
+
+```cmd
 ollama pull qwen3:1.7b
+```
+
+Test it:
+
+```cmd
 ollama run qwen3:1.7b
 ```
 
-Configure in `.env` (or the Settings page):
+The application expects Ollama at:
+
+```text
+http://localhost:11434
+```
+
+Default configuration:
 
 ```env
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:1.7b
 ```
 
-## Running the application
+See [`OLLAMA_SETUP.md`](OLLAMA_SETUP.md) for detailed setup and troubleshooting.
+
+---
+
+## Running the Application
+
+### Windows
 
 ```bat
 run.bat
 ```
 
-or `streamlit run app.py`. The sidebar shows **🟢 Ollama Connected** / **🔴 Ollama Not Available**.
+### Or directly
 
-## Researching a company
+```cmd
+streamlit run app.py
+```
 
-1. Open **Home** (or **Research Company** for advanced options).
-2. Enter the **Company Name**. Website and instructions are optional; if you leave the website empty the app searches for it and tells you which one it chose - please verify it.
-3. Click **🔍 Research Company**. Progress is real: a step is ticked only when it actually finished; warnings (`⚠`) and failures (`✗`) are shown and the pipeline continues where possible.
-4. The workspace opens with tabs: **Overview · Products · Technology · Competitors · Funding · Signals · People · GTM · Sources · AI Chat**.
-
-The steps run in their true order: identify → website → web search → **index evidence** → overview → products → technology → competitors → funding → signals → people → GTM → save. (Indexing precedes analysis because analysis retrieves from the index.)
-
-**Try without internet or Ollama-dependent research:** *Home → Load sample company* indexes a bundled, **fictional** company ("Northwind Health Clearinghouse (Sample)"; URLs use the reserved `.example` domain). You can also untick **Run AI analysis** to only collect and index evidence.
-
-Research with AI analysis makes roughly eight sequential model calls. On a CPU-only laptop expect minutes, not seconds (not benchmarked).
-
-## Company chat
-
-Use the quick-action buttons or the chat box (workspace **AI Chat** tab, or the **💬 AI Chat** page). Each answer is structured as **Answer / Evidence / AI inference**, followed by an automatically generated **Sources** list with clickable links. You can expand **Retrieved evidence** to see exactly which chunks the model saw, with similarity scores. If nothing relevant is retrieved the app says *"Information not verified from the available sources."* without calling the model.
-
-## Reports
-
-**📄 Reports → Generate Markdown Report** builds a 12-section report (Executive Summary, Company Overview, Products & Services, Technology, Target Customers, Competitors, Funding, Growth Signals, People, GTM Analysis, Why This Company?, Sources) and saves it to `data/companies/<slug>/report.md`. The report is generated deterministically from the saved data (no extra model call, so it cannot add new claims). Inference sections are labelled.
-
-## How grounding works
-
-The model's JSON is treated as a *proposal*. Before anything is saved:
-
-| Item | Rule |
-|---|---|
-| Any item's `source_ids` | Must exist in the source registry; invalid IDs are replaced with sources that really contain the item, otherwise the item is dropped. |
-| Products, competitors, technologies, people | The name must literally appear (whole words) in a cited source. |
-| Product pricing / funding amounts | Every figure must literally occur in the cited text. |
-| Funding total | Kept only if a source states a total. **Never summed by us.** Otherwise *Not verified*. |
-| Investors, dates, rounds | Each must be supported by the cited text, else removed. |
-| People | Name **and role** must appear together on the same line (abbreviation-aware); neighbours' titles can't vouch for someone else. |
-| Growth signals & GTM "verified" claims | Must share most of their meaningful words with the cited text (company name excluded). |
-| Technology | *Verified* only if directly observed in page HTML/headers or stated by the company's own publications; everything else is *Inferred*. |
-| Competitors | *Verified* only if a source explicitly calls it a competitor/alternative near the name; otherwise *Inferred*. |
-| GTM confidence | Derived from how much verified evidence exists - not taken from the model. |
-| Chat answers | Model-written "Sources" sections are discarded; we append real ones. Unknown `SRC-` IDs are flagged. |
-
-Privacy: emails and phone numbers are redacted from collected text; LinkedIn and other social sites are never downloaded (only their public search snippet may be used); only public professional information about people is kept.
-
-## Folder structure
+Then open:
 
 ```text
-know-your-company/
-├── app.py                  Streamlit UI
-├── config.py               settings: defaults < .env < data/settings.json
-├── ai/                     ollama.py (HTTP client) · prompts.py · analyzer.py (chat, extraction)
-├── research/               web_search · website_parser · company · products · technology ·
-│                           competitors · funding · signals · people · gtm · common (grounding) · pipeline
-├── rag/                    chunker · embeddings · vector_store (embedded Qdrant) · retriever · sources
-├── models/                 Pydantic models (company, product, technology, competitor, funding, signal,
-│                           person, gtm, source) + base (lenient parsing of LLM output)
-├── storage/                json_store.py · report.py
-├── data/                   companies/<slug>/{company,evidence,sources}.json + report.md · vector_store/
-├── tests/                  pytest suite (no Ollama / network needed)
-├── examples/sample_company/   fictional evidence for offline testing
-├── requirements.txt · requirements-dev.txt · pytest.ini · .env.example · .gitignore
-├── OLLAMA_SETUP.md · setup_windows.bat · run.bat
+http://localhost:8501
 ```
+
+---
+
+## How to Research a Company
+
+1. Open the application.
+2. Enter a company name.
+3. Optionally provide its official website.
+4. Optionally provide additional research instructions.
+5. Start the research.
+6. The application collects public evidence.
+7. Evidence is cleaned, indexed, and stored locally.
+8. Each intelligence module retrieves relevant evidence.
+9. Ollama/Qwen3 produces structured analysis.
+10. Python applies grounding checks.
+11. Validated intelligence is stored.
+12. The Streamlit workspace exposes the results.
+
+The workspace contains:
+
+```text
+Overview
+Products
+Technology
+Competitors
+Funding
+Signals
+People
+GTM
+Sources
+AI Chat
+```
+
+---
+
+## Offline Sample Company
+
+The repository includes a fictional sample company for testing:
+
+```text
+Northwind Health Clearinghouse (Sample)
+```
+
+Its evidence uses reserved `.example` URLs.
+
+This allows the project to exercise the pipeline without relying on a real company or live web research.
+
+---
+
+## Real-World Validation
+
+The platform was validated using Stedi, a healthcare technology company.
+
+The research run was performed locally using Ollama with the `qwen3:1.7b`
+model. The generated report contained:
+
+- 45 sources
+- 6 products
+- 11 technology signals
+- 9 competitors
+- 3 funding events
+- 8 growth signals
+- 2 named people
+
+The generated report is preserved as an example of the platform's actual
+research output:
+
+[View the Stedi Research Report](docs/examples/stedi-report.md)
+
+The report also demonstrates the platform's evidence-grounding approach:
+factual claims are associated with source IDs, while model-generated
+interpretations are explicitly marked as AI inference.
+
+Validation date:
+
+```text
+2026-10-01
+```
+
+The run also demonstrated that the application can distinguish directly supported
+technology from inferred signals, expose source-linked intelligence, preserve
+a failed leadership-search state rather than silently hiding it, and generate
+a deterministic report from persisted structured data.
+
+---
 
 ## Testing
 
-```bash
-pip install -r requirements-dev.txt
-python -m compileall .
+Run the test suite with:
+
+```cmd
 pytest
 ```
 
-The suite mocks Ollama's HTTP API and uses a deterministic offline embedder, so **no Ollama, model download or internet is required**. It covers search normalisation, chunking, embeddings, the vector store (insert/retrieve/company filtering), retrieval, the Ollama client (errors, timeouts, malformed/empty replies), Pydantic models, source validation, storage, website parsing/`robots.txt`/404/timeouts, every grounding rule (using a fake model that deliberately fabricates products, funding, people, competitors and citations), an end-to-end sample-company flow, simulated web research, and the Streamlit UI via `streamlit.testing`.
+The project also supports:
 
-What the tests do **not** prove: behaviour with a real Ollama model, the real embedding model, real DuckDuckGo results, or real browsers/Windows scripts. Validate those on your machine (see Troubleshooting).
+```cmd
+python -m compileall .
+```
 
-## Troubleshooting
+The documented validation snapshot is:
 
-| Problem | What to do |
-|---|---|
-| 🔴 Ollama Not Available | Start Ollama; check `OLLAMA_BASE_URL`; see [OLLAMA_SETUP.md](OLLAMA_SETUP.md). |
-| 🟡 Model missing | `ollama pull <model>` (name shown in the app). |
-| Research finds little / "No usable evidence" | Give the official website explicitly; check your internet; DuckDuckGo may be rate-limiting - wait a minute and retry. |
-| Many modules show ⚠ "No ... could be verified" | Expected when sources don't state the facts. Sources → check what was collected. Try a larger model or richer website. |
-| Warning about the fallback embedder | The embedding model could not load (first run needs internet). Fix the network / `EMBEDDING_MODEL`, then **Companies → Re-index**. |
-| "Could not open the local vector store" | Another copy of the app is running; close it (embedded Qdrant allows one process). |
-| Changed the embedding model | Companies → **Re-index** (vectors from different models are kept separate, never mixed). |
-| Website is JavaScript-heavy / empty | Only server-rendered text can be read; the app reports this and relies on search results instead. |
-| Timeouts | Smaller model, lower `TOP_K`, higher `OLLAMA_TIMEOUT`. |
+```text
+182 tests passed
+0 tests failed
+```
+
+The test suite covers areas including:
+
+- Pydantic models
+- Source handling
+- Chunking
+- Embeddings
+- Vector storage
+- Retrieval
+- Ollama client behavior
+- Website parsing
+- Search normalization
+- Grounding rules
+- Storage
+- End-to-end sample-company flow
+- Streamlit UI behavior
+
+The tests use controlled/fake components where appropriate and do not require a paid API.
+
+---
+
+## Privacy & Local-First Design
+
+The application is intentionally designed for local execution.
+
+- No paid LLM API is required.
+- No OpenAI/Anthropic/Groq/Gemini API key is required.
+- LLM inference runs through local Ollama.
+- Company research is stored locally.
+- Runtime company data is excluded from Git through `.gitignore`.
+- Local vector data is excluded from Git.
+- `.env` is excluded from Git.
+- Emails and phone numbers are redacted from collected text.
+- LinkedIn is deliberately not fetched by the application.
+
+The project is intended for a single-user local workflow and does not currently provide authentication or multi-user access control.
+
+---
 
 ## Limitations
 
-* **Small local models are limited.** Expect missed details and occasional awkward phrasing. The checks remove unsupported claims but cannot make a weak model insightful.
-* **Grounding is lexical.** It verifies that names, figures and key words appear in the cited text. It cannot detect a wrong *interpretation* that reuses source words (e.g. negation), and it may drop a true claim that was paraphrased too loosely. "Verified" means "found in / stated by the source", not independently fact-checked - and a source itself can be wrong.
-* **Retrieval bounds recall.** Only the top-k retrieved chunks are shown to the model per module, so facts in un-retrieved chunks are missed.
-* **`MIN_SCORE` is uncalibrated.** The 0.10 default was not tuned against the real embedding model. Use the displayed retrieval scores to tune it. The keyword fallback embedder uses its own lower threshold and is noticeably weaker than the real model.
-* **DuckDuckGo** access is unofficial and can be rate-limited or change without notice. Results vary by region.
-* **Coverage:** JavaScript-rendered sites, paywalled news, PDFs and login-only pages are not read; LinkedIn is deliberately not fetched.
-* **Web results can be outdated or wrong.** Always check the sources before acting.
-* **Performance** on CPU-only hardware is slow; this has not been benchmarked.
-* **Single user, local only** - no authentication or multi-user support by design. Embedded Qdrant supports one process at a time.
-* The Windows `.bat` scripts were written carefully but could not be executed in the environment where this project was built.
+### Small local model
 
-## Future improvements
+Qwen3 1.7B is practical for a constrained CPU/RAM environment, but small models can miss details or produce weaker reasoning than larger hosted models.
 
-LangGraph / multi-agent orchestration, optional stronger search providers (disabled by default), CRM integrations, Postgres + pgvector, authentication, a React front-end, incremental re-research and change tracking, and calibrated relevance thresholds per embedding model. The code is split into small modules (`research/*`, `rag/*`, `ai/*`) so each can become an agent or service later.
+### Lexical grounding
+
+Grounding checks are primarily evidence/word based. They reduce unsupported claims but cannot guarantee semantic correctness.
+
+For example, a source could contain the same words as a generated statement while expressing a different interpretation.
+
+### Retrieval limits
+
+Only the most relevant retrieved chunks are provided to each analysis task. Information outside the retrieved context may therefore be missed.
+
+### Web coverage
+
+The research layer may have limited coverage for:
+
+- JavaScript-heavy sites
+- Paywalled content
+- Login-only pages
+- Some PDFs
+- Rate-limited search results
+
+### Performance
+
+CPU-only research can take minutes because multiple structured model calls may be performed sequentially.
+
+### Local vector store
+
+Embedded Qdrant is intended for this local single-user architecture and is not designed here as a multi-user production database.
+
+---
+
+## Engineering Decisions
+
+### Why Ollama?
+
+It keeps the LLM boundary local and avoids dependence on paid API calls.
+
+### Why Qdrant?
+
+Embedded Qdrant provides vector similarity search without requiring a separate database service.
+
+### Why RAG?
+
+Company research can contain more information than a small model can reliably consume at once. Retrieval provides task-specific evidence while preserving source traceability.
+
+### Why structured models?
+
+Pydantic models make the intelligence layer explicit and allow deterministic normalization and validation instead of storing arbitrary LLM text.
+
+### Why validate LLM output?
+
+The LLM can fabricate source IDs, names, figures, or relationships. The application therefore treats model output as a proposal and checks it against the evidence before persistence.
+
+### Why generate reports from stored data?
+
+The reporting layer does not need another generative pass. Formatting validated structured data reduces the opportunity to introduce new unsupported claims.
+
+---
+
+## Current Status
+
+**Know Your Company v1 — Local MVP**
+
+| Area | Status |
+|---|---|
+| Core application | ✅ Complete |
+| Streamlit UI | ✅ Complete |
+| Local Ollama integration | ✅ Validated |
+| Qwen3 1.7B | ✅ Validated |
+| Web research | ✅ Validated |
+| RAG pipeline | ✅ Complete |
+| Grounding checks | ✅ Complete |
+| Structured intelligence | ✅ Complete |
+| Grounded chat | ✅ Complete |
+| Deterministic reporting | ✅ Complete |
+| Automated tests | ✅ 182 documented passing |
+| Stedi real-world validation | ✅ Complete |
+| GitHub publication | ✅ Complete |
+
+---
+
+## Roadmap
+
+Possible future extensions include:
+
+- LangGraph orchestration
+- Multi-agent research workflows
+- Incremental company re-research
+- Change/signal tracking
+- CRM integrations
+- PostgreSQL + pgvector
+- Authentication and multi-user support
+- React-based frontend
+- Stronger optional search providers
+- Calibrated retrieval thresholds
+- Larger local models where hardware permits
+
+These are future directions rather than requirements for the current local MVP.
+
+---
+
+## Project Documentation
+
+The repository's long-form technical documentation is maintained separately from this README.
+
+Recommended documentation areas:
+
+```text
+docs/
+├── architecture.md
+├── research-lifecycle.md
+├── grounding.md
+├── testing.md
+├── validation.md
+└── examples/
+    └── stedi-report.md
+```
+
+The README is intended as the quick technical and portfolio entry point; the deeper documentation explains implementation details and validation history.
+
+---
+
+## Portfolio Summary
+
+> **Know Your Company** is a local AI-powered company intelligence and GTM research platform built with Python, Streamlit, Ollama, Qwen3, RAG, Sentence Transformers, and embedded Qdrant. It collects public company evidence, indexes it locally, retrieves relevant context for structured analysis, validates LLM output against source evidence, and exposes the resulting intelligence through a Streamlit workspace, grounded chat, and deterministic Markdown reports.
+
+---
+
+## Author
+
+**Aswin M**
+
+GitHub: [@Aswin7M](https://github.com/Aswin7M)
+
+Repository: [know-your-company-platform-Aswin-M](https://github.com/Aswin7M/know-your-company-platform-Aswin-M)
+
+---
+
+## License
+
+This project is released under the MIT License. See [`LICENSE`](LICENSE).
